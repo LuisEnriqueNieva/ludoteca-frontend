@@ -1,4 +1,4 @@
-#Ludoteca — Frontend
+# Ludoteca — Frontend
 
 Panel web (React + Vite) que consume los 5 microservicios del proyecto **Ludoteca / Red de Cafés de Juegos de Mesa**. Cada microservicio tiene su propia "mesa" en la interfaz, con al menos 2 métodos REST invocados.
 
