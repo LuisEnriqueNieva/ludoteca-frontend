@@ -5,11 +5,7 @@
     "juego_id": 1,
     "fecha": "2026-09-02T18:30:00Z",
     "resultado": "Ganó María",
-    "partida_jugadores": [
-      { "id": 1, "nombre_jugador": "María" },
-      { "id": 2, "nombre_jugador": "Carlos" },
-      { "id": 3, "nombre_jugador": "Ana" }
-    ]
+    "jugadores": ["María", "Carlos", "Ana"]
   },
   {
     "id": 102,
@@ -17,10 +13,7 @@
     "juego_id": 5,
     "fecha": "2026-09-05T20:00:00Z",
     "resultado": "Ganó Carlos",
-    "partida_jugadores": [
-      { "id": 4, "nombre_jugador": "Carlos" },
-      { "id": 5, "nombre_jugador": "Luis" }
-    ]
+    "jugadores": ["Carlos", "Luis"]
   },
   {
     "id": 103,
@@ -28,10 +21,6 @@
     "juego_id": 3,
     "fecha": "2026-09-07T19:15:00Z",
     "resultado": "Ganó Ana",
-    "partida_jugadores": [
-      { "id": 6, "nombre_jugador": "Ana" },
-      { "id": 7, "nombre_jugador": "María" },
-      { "id": 8, "nombre_jugador": "Ximena" }
-    ]
+    "jugadores": ["Ana", "María", "Ximena"]
   }
 ]

@@ -95,9 +95,7 @@ export default function OperativoView({ onNavigate }) {
     return `${ed} · ${j.genero}`;
   };
 
-  const jugadoresUnicos = new Set(
-    partidas.flatMap((p) => p.partida_jugadores.map((j) => j.nombre_jugador))
-  ).size;
+  const mesasActivas = new Set(partidas.map((p) => p.mesa)).size;
 
   const reservasConfirmadas = clientes.reduce(
     (acc, c) => acc + c.reservas.filter((r) => r.estado === 'confirmada').length,
@@ -178,11 +176,11 @@ export default function OperativoView({ onNavigate }) {
 
             <div className="kpi-card">
               <div className="kpi-head">
-                <span className="kpi-label">Jugadores</span>
-                <span className="material-symbols-outlined kpi-icon accent">groups</span>
+                <span className="kpi-label">Mesas activas</span>
+                <span className="material-symbols-outlined kpi-icon accent">table_restaurant</span>
               </div>
-              <div className="kpi-value">{jugadoresUnicos}</div>
-              <div className="kpi-sub">Jugadores distintos (MS2)</div>
+              <div className="kpi-value">{mesasActivas}</div>
+              <div className="kpi-sub">Mesas con partidas registradas (MS2)</div>
             </div>
 
             <div className="kpi-card">
@@ -350,7 +348,6 @@ export default function OperativoView({ onNavigate }) {
                         <tr>
                           <th>Mesa</th>
                           <th>Juego</th>
-                          <th>Jugadores</th>
                           <th>Estado / Resultado</th>
                           <th style={{ textAlign: 'right' }}>Acción</th>
                         </tr>
@@ -366,12 +363,6 @@ export default function OperativoView({ onNavigate }) {
                                 <span className="game-title">{nombreJuego(p.juego_id)}</span>
                                 <span className="game-sub">{subJuego(p.juego_id)}</span>
                               </div>
-                            </td>
-                            <td>
-                              <span className="pax-cell">
-                                <span className="material-symbols-outlined icon-sm">group</span>
-                                {p.partida_jugadores.length} jugadores
-                              </span>
                             </td>
                             <td>
                               <span className="status-pill win">

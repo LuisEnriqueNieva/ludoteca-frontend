@@ -69,7 +69,7 @@ export default function PartidasView() {
             {formatFecha(detalle.fecha)} · {detalle.resultado}
           </p>
           <p style={{ margin: 0, fontSize: '0.85rem' }}>
-            Jugadores: {detalle.partida_jugadores.map((j) => j.nombre_jugador).join(', ')}
+            Jugadores: {(detalle.jugadores || []).join(', ')}
           </p>
         </div>
       )}
@@ -85,7 +85,6 @@ export default function PartidasView() {
               <th>Mesa</th>
               <th>Fecha</th>
               <th>Resultado</th>
-              <th>Jugadores</th>
             </tr>
           </thead>
           <tbody>
@@ -94,7 +93,6 @@ export default function PartidasView() {
                 <td>{p.mesa}</td>
                 <td>{formatFecha(p.fecha)}</td>
                 <td>{p.resultado}</td>
-                <td>{p.partida_jugadores.map((j) => j.nombre_jugador).join(', ')}</td>
               </tr>
             ))}
           </tbody>

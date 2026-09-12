@@ -46,11 +46,11 @@ export default function PerfilView() {
 
       {perfil && (
         <div className="profile-card">
-          <h3>{perfil.nombre_jugador}</h3>
+          <h3>{perfil.jugador}</h3>
           <div className="stat-grid" style={{ marginBottom: '0.9rem' }}>
             <div className="stat-card">
               <div className="stat-label">Partidas jugadas</div>
-              <div className="stat-value">{perfil.partidas_totales}</div>
+              <div className="stat-value">{perfil.partidas.length}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Membresía</div>
@@ -60,12 +60,14 @@ export default function PerfilView() {
             </div>
             <div className="stat-card">
               <div className="stat-label">Próximas reservas</div>
-              <div className="stat-value">{perfil.proximas_reservas.length}</div>
+              <div className="stat-value">{perfil.reservas.length}</div>
             </div>
           </div>
           <p style={{ margin: 0, fontSize: '0.88rem' }}>
             <strong>Juegos jugados:</strong>{' '}
-            {perfil.juegos_jugados.length > 0 ? perfil.juegos_jugados.join(', ') : 'ninguno registrado'}
+            {perfil.partidas.length > 0
+              ? [...new Set(perfil.partidas.map((p) => p.juego_nombre))].join(', ')
+              : 'ninguno registrado'}
           </p>
         </div>
       )}

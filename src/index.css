@@ -1182,17 +1182,6 @@ select.text-input:focus {
   color: var(--on-surface-variant);
 }
 
-.pax-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 12px;
-}
-
-.pax-cell .material-symbols-outlined {
-  color: var(--secondary);
-}
-
 .status-pill {
   display: inline-flex;
   align-items: center;
