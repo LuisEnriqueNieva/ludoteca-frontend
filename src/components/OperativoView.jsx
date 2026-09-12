@@ -71,10 +71,10 @@ export default function OperativoView({ onNavigate }) {
         getPartidas(),
         getClientes(),
       ]);
-      setJuegos(j);
-      setEditoriales(e);
-      setPartidas(p);
-      setClientes(c);
+      setJuegos(j ?? []);
+      setEditoriales(e ?? []);
+      setPartidas(p ?? []);
+      setClientes((c ?? []).map((cli) => ({ ...cli, reservas: cli.reservas ?? [] })));
       setUltimaSync(new Date());
     } catch (err) {
       setError(err.message);
@@ -84,8 +84,8 @@ export default function OperativoView({ onNavigate }) {
 
     try {
       const [juego, horario] = await Promise.all([getJuegoMasJugado(), getHorarioPico()]);
-      setPorComplejidad(juego.por_complejidad);
-      setHorarioPico(horario);
+      setPorComplejidad(juego?.por_complejidad ?? []);
+      setHorarioPico(horario ?? []);
     } catch (err) {
       console.log('MS5 (analítica) no disponible todavía:', err.message);
       setPorComplejidad([]);
