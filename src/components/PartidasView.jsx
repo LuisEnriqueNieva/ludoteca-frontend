@@ -88,7 +88,7 @@ export default function PartidasView() {
             </tr>
           </thead>
           <tbody>
-            {partidas.map((p) => (
+            {partidas.slice(0, 300).map((p) => (
               <tr key={p.id}>
                 <td>{p.mesa}</td>
                 <td>{formatFecha(p.fecha)}</td>

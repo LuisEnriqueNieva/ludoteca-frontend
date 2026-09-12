@@ -88,7 +88,7 @@ export default function CatalogoView() {
             </tr>
           </thead>
           <tbody>
-            {juegos.map((j) => (
+            {juegos.slice(0, 300).map((j) => (
               <tr key={j.id}>
                 <td>{j.titulo}</td>
                 <td>{j.genero}</td>

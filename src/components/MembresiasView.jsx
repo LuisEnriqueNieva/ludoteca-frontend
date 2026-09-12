@@ -17,7 +17,7 @@ export default function MembresiasView() {
     let vivo = true;
     setLoading(true);
     getClientes()
-      .then((data) => vivo && setClientes(data))
+            .then((data) => vivo && setClientes(data.slice(0, 300)))
       .catch((err) => vivo && setError(err.message))
       .finally(() => vivo && setLoading(false));
     return () => {
