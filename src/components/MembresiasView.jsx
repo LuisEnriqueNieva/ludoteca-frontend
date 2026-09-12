@@ -37,15 +37,17 @@ export default function MembresiasView() {
     }
   }
 
-  async function enviarReserva() {
+    async function enviarReserva() {
     if (!clienteId || !mesa || !horario) {
       setMensajeReserva('Completa cliente, mesa y horario antes de reservar.');
       return;
     }
     try {
       setError(null);
-      const nueva = await crearReserva(clienteId, { mesa: Number(mesa), horario, estado: 'confirmada' });
+      const clienteActualizado = await crearReserva(clienteId, { mesa: Number(mesa), horario, estado: 'confirmada' });
+      const nueva = clienteActualizado.reservas.at(-1);
       setMensajeReserva(`Reserva creada: mesa ${nueva.mesa}, estado "${nueva.estado}".`);
+      setClientes((prev) => prev.map((c) => (c._id === clienteId ? clienteActualizado : c)));
     } catch (err) {
       setMensajeReserva(null);
       setError(err.message);
