@@ -71,6 +71,9 @@ export default function PartidasView() {
           <p style={{ margin: 0, fontSize: '0.85rem' }}>
             Jugadores: {(detalle.jugadores || []).join(', ')}
           </p>
+                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
+            Juego: #{detalle.juego_id}
+          </p>
         </div>
       )}
 
