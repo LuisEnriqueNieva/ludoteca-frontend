@@ -16,7 +16,7 @@ export default function AnaliticaView() {
     Promise.all([getJuegoMasJugado(), getMembresiaVsFrecuencia(), getHorarioPico()])
       .then(([juego, membresia, horario]) => {
         if (!vivo) return;
-        setPorComplejidad(juego.por_complejidad);
+        setPorComplejidad(juego);
         setMembresiaFrecuencia(membresia);
         setHorarioPico(horario);
         setError(null);
@@ -28,7 +28,7 @@ export default function AnaliticaView() {
     };
   }, []);
 
-  const maxReservas = Math.max(1, ...horarioPico.map((h) => h.reservas));
+  const maxReservas = Math.max(1, ...horarioPico.map((h) => Number(h.cantidad_reservas)));
 
   return (
     <Panel
@@ -45,10 +45,10 @@ export default function AnaliticaView() {
           </h3>
           <div className="stat-grid" style={{ marginBottom: '1.4rem' }}>
             {porComplejidad.map((row) => (
-              <div className="stat-card" key={row.complejidad}>
+              <div className="stat-card" key={row.titulo}>
                 <div className="stat-label">Complejidad {row.complejidad}</div>
                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>
-                  {row.juego}
+                  {row.titulo}
                 </div>
                 <div className="service-meta">{row.veces_jugado} partidas</div>
               </div>
@@ -56,13 +56,13 @@ export default function AnaliticaView() {
           </div>
 
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', margin: '0 0 0.6rem' }}>
-            Visitas promedio al mes según membresía
+            Reservas totales según membresía
           </h3>
           <div className="stat-grid" style={{ marginBottom: '1.4rem' }}>
             {membresiaFrecuencia.map((row) => (
               <div className="stat-card" key={row.plan}>
                 <div className="stat-label">Plan {row.plan}</div>
-                <div className="stat-value">{row.visitas_promedio_mes}</div>
+                <div className="stat-value">{row.total_reservas}</div>
               </div>
             ))}
           </div>
@@ -71,12 +71,12 @@ export default function AnaliticaView() {
             Horario de mayor demanda
           </h3>
           {horarioPico.map((row) => (
-            <div className="bar-row" key={row.horario}>
-              <span>{row.horario}</span>
+            <div className="bar-row" key={row.hora_del_dia}>
+              <span>{row.hora_del_dia}h</span>
               <div className="bar-track">
-                <div className="bar-fill" style={{ width: `${(row.reservas / maxReservas) * 100}%` }} />
+                <div className="bar-fill" style={{ width: `${(Number(row.cantidad_reservas) / maxReservas) * 100}%` }} />
               </div>
-              <span>{row.reservas}</span>
+              <span>{row.cantidad_reservas}</span>
             </div>
           ))}
         </>
