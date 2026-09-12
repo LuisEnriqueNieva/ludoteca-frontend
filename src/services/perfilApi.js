@@ -6,9 +6,6 @@ import clientesMock from '../mocks/clientes.json';
 
 const BASE = SERVICE_URLS.perfil;
 
-// GET /perfil/{nombre_jugador}
-// El contrato real de MS4 devuelve:
-// { jugador, membresia (string), reservas, partidas[{id, juego_id, fecha, resultado, juego_nombre}] }
 export async function getPerfilJugador(nombre) {
   if (USE_MOCKS) {
     await delay(400);
@@ -36,5 +33,13 @@ export async function getPerfilJugador(nombre) {
       partidas,
     };
   }
-  return getJson(`${BASE}/perfil/${encodeURIComponent(nombre)}`);
+  return getJson(`${BASE}/perfil?nombre_jugador=${encodeURIComponent(nombre)}`);
+}
+
+export async function getListaClientes() {
+  if (USE_MOCKS) {
+    await delay(150);
+    return clientesMock.map((c) => c.nombre);
+  }
+  return getJson(`${BASE}/perfil/lista`);
 }

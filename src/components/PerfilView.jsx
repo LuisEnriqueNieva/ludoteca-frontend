@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Panel from './Panel';
-import { getPerfilJugador } from '../services/perfilApi';
+import { getPerfilJugador, getListaClientes } from '../services/perfilApi';
 import { SERVICE_URLS } from '../config';
 
 export default function PerfilView() {
@@ -8,6 +8,11 @@ export default function PerfilView() {
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [nombresDisponibles, setNombresDisponibles] = useState([]);
+
+  useEffect(() => {
+    getListaClientes().then(setNombresDisponibles).catch(() => {});
+  }, []);
 
   async function buscarPerfil() {
     if (!nombre) return;
@@ -28,15 +33,21 @@ export default function PerfilView() {
     <Panel
       title="Ficha de cliente (agregador)"
       meta={`MS4 · agregador sin BD, combina MS1+MS2+MS3 · ${SERVICE_URLS.perfil}`}
-      endpoints={['GET /perfil/{nombre}']}
+      endpoints={['GET /perfil', 'GET /perfil/lista']}
     >
       <div className="action-row">
         <input
           className="text-input"
+          list="lista-clientes"
           placeholder="Nombre del cliente, ej. Ana"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />
+        <datalist id="lista-clientes">
+          {nombresDisponibles.map((n) => (
+            <option key={n} value={n} />
+          ))}
+        </datalist>
         <button className="action" onClick={buscarPerfil} disabled={loading}>
           {loading ? 'Consultando…' : 'Armar ficha del cliente'}
         </button>
