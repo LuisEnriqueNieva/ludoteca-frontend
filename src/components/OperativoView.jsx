@@ -61,30 +61,38 @@ export default function OperativoView({ onNavigate }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function cargarDatos({ silencioso } = {}) {
+    async function cargarDatos({ silencioso } = {}) {
     if (!silencioso) setLoading(true);
     setError(null);
     try {
-      const [j, e, p, c, juego, horario] = await Promise.all([
+      const [j, e, p, c] = await Promise.all([
         getJuegos(),
         getEditoriales(),
         getPartidas(),
         getClientes(),
-        getJuegoMasJugado(),
-        getHorarioPico(),
       ]);
       setJuegos(j);
       setEditoriales(e);
       setPartidas(p);
       setClientes(c);
-      setPorComplejidad(juego.por_complejidad);
-      setHorarioPico(horario);
       setUltimaSync(new Date());
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
+      return;
     }
+
+    try {
+      const [juego, horario] = await Promise.all([getJuegoMasJugado(), getHorarioPico()]);
+      setPorComplejidad(juego.por_complejidad);
+      setHorarioPico(horario);
+    } catch (err) {
+      console.log('MS5 (analítica) no disponible todavía:', err.message);
+      setPorComplejidad([]);
+      setHorarioPico([]);
+    }
+
+    setLoading(false);
   }
 
   const nombreJuego = (id) => juegos.find((j) => j.id === id)?.titulo ?? `#${id}`;
