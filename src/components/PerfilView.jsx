@@ -32,7 +32,6 @@ export default function PerfilView() {
   return (
     <Panel
       title="Ficha de cliente (agregador)"
-      meta={`MS4 · agregador sin BD, combina MS1+MS2+MS3 · ${SERVICE_URLS.perfil}`}
       endpoints={['GET /perfil', 'GET /perfil/lista']}
     >
       <div className="action-row">

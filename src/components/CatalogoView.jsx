@@ -45,7 +45,6 @@ export default function CatalogoView() {
   return (
     <Panel
       title="Catálogo de juegos de mesa"
-      meta={`MS1 · Python + MySQL · ${SERVICE_URLS.catalogo}`}
       endpoints={['GET /juegos', 'GET /juegos/{id}', 'GET /editoriales']}
     >
       <div className="action-row">

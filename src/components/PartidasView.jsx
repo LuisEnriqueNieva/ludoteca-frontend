@@ -45,7 +45,6 @@ export default function PartidasView() {
   return (
     <Panel
       title="Partidas jugadas"
-      meta={`MS2 · Java + PostgreSQL · ${SERVICE_URLS.partidas}`}
       endpoints={['GET /partidas', 'GET /partidas/{id}']}
     >
       <div className="action-row">

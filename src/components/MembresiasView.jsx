@@ -55,7 +55,6 @@ export default function MembresiasView() {
   return (
     <Panel
       title="Membresías y reservas"
-      meta={`MS3 · Node.js + MongoDB · ${SERVICE_URLS.membresias}`}
       endpoints={['GET /clientes', 'GET /clientes/{id}/reservas', 'POST /clientes/{id}/reservas']}
     >
       <div className="action-row">

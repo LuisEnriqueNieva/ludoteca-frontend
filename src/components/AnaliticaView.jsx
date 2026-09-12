@@ -33,7 +33,6 @@ export default function AnaliticaView() {
   return (
     <Panel
       title="Analítica de la red de cafés"
-      meta={`MS5 · Python + Athena · ${SERVICE_URLS.analitica}`}
       endpoints={['GET /analitica/juego-mas-jugado', 'GET /analitica/membresia-vs-frecuencia', 'GET /analitica/horario-pico']}
     >
       {loading && <p className="loading-note">Consultando analítica…</p>}
