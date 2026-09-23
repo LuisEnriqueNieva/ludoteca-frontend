@@ -135,13 +135,9 @@ body {
 }
 
 .brand-icon {
-  font-size: 28px;
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  background: linear-gradient(135deg, #ffce12 0%, #db0080 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .brand-text {
@@ -351,6 +347,10 @@ body {
   background: var(--green-400);
   animation: none;
 }
+
+.appfoot .dot.ok { background: var(--green-400); }
+.appfoot .dot.warn { background: var(--tertiary-fixed); }
+.appfoot .dot.err { background: var(--error); }
 
 .appfoot .sep {
   color: rgba(255, 255, 255, 0.4);

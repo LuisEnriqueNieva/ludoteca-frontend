@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { USE_MOCKS } from './config';
+import { useEffect, useState } from 'react';
 import OperativoView from './components/OperativoView';
 import CatalogoView from './components/CatalogoView';
 import PartidasView from './components/PartidasView';
 import MembresiasView from './components/MembresiasView';
 import PerfilView from './components/PerfilView';
 import AnaliticaView from './components/AnaliticaView';
+import { getServiciosSaludables } from './services/health';
 
 const MESAS = [
   { id: 'operativo', label: 'Panel Operativo', Componente: OperativoView },
@@ -16,16 +16,57 @@ const MESAS = [
   { id: 'analitica', label: 'Analítica (MS5)', Componente: AnaliticaView },
 ];
 
+const HEALTH_POLL_MS = 30000;
+
 export default function App() {
   const [mesaActiva, setMesaActiva] = useState('operativo');
+  const [salud, setSalud] = useState(null);
+  const [saludError, setSaludError] = useState(false);
   const Activo = MESAS.find((m) => m.id === mesaActiva)?.Componente ?? OperativoView;
+
+  useEffect(() => {
+    let vivo = true;
+    async function chequear() {
+      try {
+        const resultado = await getServiciosSaludables();
+        if (vivo) {
+          setSalud(resultado);
+          setSaludError(false);
+        }
+      } catch {
+        if (vivo) setSaludError(true);
+      }
+    }
+    chequear();
+    const id = setInterval(chequear, HEALTH_POLL_MS);
+    return () => {
+      vivo = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  const todoOk = salud && salud.ok === salud.total;
 
   return (
     <>
       <header className="appbar">
         <div className="appbar-inner">
           <div className="brand">
-            <span className="material-symbols-outlined brand-icon">casino</span>
+            <svg className="brand-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="brand-die" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#ffce12" />
+                  <stop offset="1" stopColor="#db0080" />
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="20" height="20" rx="4.5" fill="url(#brand-die)" />
+              <g fill="#ffffff">
+                <circle cx="7.5" cy="7.5" r="1.8" />
+                <circle cx="16.5" cy="16.5" r="1.8" />
+                <circle cx="16.5" cy="7.5" r="1.8" />
+                <circle cx="7.5" cy="16.5" r="1.8" />
+              </g>
+            </svg>
             <div className="brand-text">
               <span className="brand-title">ludOteca</span>
               <span className="brand-sub">Panel Operativo · Staff</span>
@@ -43,24 +84,6 @@ export default function App() {
               </button>
             ))}
           </nav>
-
-          <div className="appbar-side">
-            <span className="status-badge">
-              <span className="dot" />
-              VITE_USE_MOCKS: {USE_MOCKS ? 'MOCK' : 'LIVE'}
-            </span>
-            <span className="turno-badge">
-              <span className="material-symbols-outlined icon-sm">schedule</span>
-              TURNO: Tarde · Mesa Central
-            </span>
-            <div className="user-chip">
-              <div className="user-chip-text">
-                <span className="user-chip-name">Ximena</span>
-                <span className="user-chip-role">Encargada de Turno</span>
-              </div>
-              <span className="user-avatar">X</span>
-            </div>
-          </div>
         </div>
       </header>
 
@@ -74,12 +97,13 @@ export default function App() {
         <span>© 2026 Ludoteca · Sistema Operativo Unificado</span>
         <div className="appfoot-right">
           <span className="foot-health">
-            <span className="dot" /> Gateway Latency: 14ms
+            <span className={`dot ${saludError ? 'err' : todoOk ? 'ok' : 'warn'}`} />
+            {saludError
+              ? 'No se pudo verificar el estado de los servicios'
+              : salud
+                ? `${salud.ok}/${salud.total} servicios respondiendo`
+                : 'Verificando servicios…'}
           </span>
-          <span className="sep">|</span>
-          <span>Cluster: prod-eu-central-1</span>
-          <span className="sep">|</span>
-          <span className="healthy">5/5 Servicios Saludables</span>
         </div>
       </footer>
     </>

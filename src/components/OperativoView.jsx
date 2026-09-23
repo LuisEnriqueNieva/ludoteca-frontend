@@ -3,7 +3,7 @@ import { getJuegos, getEditoriales } from '../services/catalogoApi';
 import { getPartidas } from '../services/partidasApi';
 import { getClientes } from '../services/membresiasApi';
 import { getJuegoMasJugado, getHorarioPico } from '../services/analiticaApi';
-import { USE_MOCKS, SERVICE_URLS } from '../config';
+import { SERVICE_URLS } from '../config';
 
 function formatFecha(iso) {
   try {
@@ -84,7 +84,7 @@ export default function OperativoView({ onNavigate }) {
 
     try {
       const [juego, horario] = await Promise.all([getJuegoMasJugado(), getHorarioPico()]);
-      setPorComplejidad(juego?.por_complejidad ?? []);
+      setPorComplejidad(juego ?? []);
       setHorarioPico(horario ?? []);
     } catch (err) {
       console.log('MS5 (analítica) no disponible todavía:', err.message);
@@ -120,12 +120,12 @@ export default function OperativoView({ onNavigate }) {
     .sort((a, b) => new Date(a.horario) - new Date(b.horario))
     .slice(0, 4);
 
-  const maxReservas = Math.max(1, ...horarioPico.map((h) => h.reservas));
+  const maxReservas = Math.max(1, ...horarioPico.map((h) => h.cantidad_reservas));
   const topJuego = porComplejidad.length
     ? [...porComplejidad].sort((a, b) => b.veces_jugado - a.veces_jugado)[0]
     : null;
   const pico = horarioPico.length
-    ? [...horarioPico].sort((a, b) => b.reservas - a.reservas)[0]
+    ? [...horarioPico].sort((a, b) => b.cantidad_reservas - a.cantidad_reservas)[0]
     : null;
 
   // datasource para el gráfico SVG
@@ -136,11 +136,8 @@ export default function OperativoView({ onNavigate }) {
       <div className="disp-bar">
         <div className="disp-left">
           <div className="disp-titlerow">
-            <span className="disp-chip">Gateway Dispatch</span>
-            <h2 className="disp-title">Panel Operativo Global · Gateway Central v1.8</h2>
-            <span className="disp-mock-pill">
-              <span className="dot" /> {USE_MOCKS ? 'MOCK ACTIVO (JSON src/mocks/)' : 'LIVE (.env)'}
-            </span>
+            <span className="disp-chip">Gateway</span>
+            <h2 className="disp-title">Panel Operativo Global</h2>
             <span className="disp-sync">
               <span className="material-symbols-outlined icon-sm">cloud_sync</span>
               Auto-refresh 20s · Última sync {ultimaSync ? formatHoraSync(ultimaSync) : '…'}
@@ -213,10 +210,10 @@ export default function OperativoView({ onNavigate }) {
               <div className="kpi-card">
                 <div className="kpi-head">
                   <span className="kpi-label">Top Título</span>
-                  <span className="material-symbols-outlined kpi-icon hot">emoji_events</span>
+                  <span className="material-symbols-outlined kpi-icon hot">workspace_premium</span>
                 </div>
                 <div className="kpi-value small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {topJuego.juego}
+                  {topJuego.titulo}
                 </div>
                 <div className="kpi-sub">
                   <strong>{topJuego.veces_jugado}</strong> partidas
@@ -230,9 +227,9 @@ export default function OperativoView({ onNavigate }) {
                   <span className="kpi-label">Pico Demanda</span>
                   <span className="material-symbols-outlined kpi-icon">schedule</span>
                 </div>
-                <div className="kpi-value small">{pico.horario}</div>
+                <div className="kpi-value small">{pico.hora_del_dia}h</div>
                 <div className="kpi-sub">
-                  <span className="hot-text">Reservas en franja: {pico.reservas}</span>
+                  <span className="hot-text">Reservas en franja: {pico.cantidad_reservas}</span>
                 </div>
               </div>
             )}
@@ -243,9 +240,9 @@ export default function OperativoView({ onNavigate }) {
               <div className="sec-grid">
                 <div className="sec-title">
                   <span className="material-symbols-outlined icon-sm">hub</span>
-                  <span className="sec-name">Arquitectura de Microservicios &amp; Enlaces Locales</span>
+                  <span className="sec-name">Arquitectura de Microservicios</span>
                 </div>
-                <span className="sec-meta">5 servicios · modo simulado (mock)</span>
+                <span className="sec-meta">5 servicios · Gateway</span>
               </div>
             </div>
             <div className="ms-grid">
@@ -254,9 +251,6 @@ export default function OperativoView({ onNavigate }) {
                   <div className="ms-card-top">
                     <div className="ms-card-head">
                       <span className="ms-title">{s.nombre}</span>
-                      <span className={`ms-badge ${s.id === 'perfil' ? 'yellow' : 'green'}`}>
-                        <span className="dot" /> {USE_MOCKS ? 'MOCK' : 'LIVE'}
-                      </span>
                     </div>
                     <span className="ms-tech">{TECH[s.id]}</span>
                     <span className="ms-url">{s.url}</span>
@@ -299,11 +293,11 @@ export default function OperativoView({ onNavigate }) {
                     {horarioPico.map((row, i) => {
                       const center = 70 + slotW * (i + 0.5);
                       const x = Math.round(center - 24);
-                      const altura = Math.max(10, Math.round((row.reservas / maxReservas) * 113));
+                      const altura = Math.max(10, Math.round((row.cantidad_reservas / maxReservas) * 113));
                       const y = 140 - altura;
-                      const esPico = row.horario === pico.horario;
+                      const esPico = pico && row.hora_del_dia === pico.hora_del_dia;
                       return (
-                        <g key={row.horario}>
+                        <g key={row.hora_del_dia}>
                           <rect
                             className={`chart-bar ${esPico ? 'peak' : ''}`}
                             height={altura}
@@ -313,10 +307,10 @@ export default function OperativoView({ onNavigate }) {
                             y={y}
                           />
                           <text className="chart-text-val" textAnchor="middle" x={center} y={y - 7}>
-                            {esPico ? `${row.reservas} · PICO` : row.reservas}
+                            {esPico ? `${row.cantidad_reservas} · PICO` : row.cantidad_reservas}
                           </text>
                           <text className="chart-text-label" textAnchor="middle" x={center} y="160">
-                            {row.horario.split(' - ')[0]}
+                            {row.hora_del_dia}h
                           </text>
                           {esPico && <circle cx={center} cy={y} r="3" fill="#ffce12" />}
                         </g>
@@ -391,7 +385,7 @@ export default function OperativoView({ onNavigate }) {
                 )}
 
                 <div className="table-foot">
-                  <span>Sincronizado vía MS2 mock (Offset local)</span>
+                  <span>Sincronizado vía MS2 real (offset local)</span>
                   <button className="foot-link" onClick={() => onNavigate('partidas')}>
                     <span className="material-symbols-outlined icon-sm">add_circle</span>
                     <span>Registrar Partida Manual</span>

@@ -1,8 +1,0 @@
-[
-  { "id": 1, "titulo": "Catán", "genero": "Estrategia", "complejidad": "Media", "jugadores_min": 3, "jugadores_max": 4, "editorial_id": 1 },
-  { "id": 2, "titulo": "Carcassonne", "genero": "Colocación de losetas", "complejidad": "Baja", "jugadores_min": 2, "jugadores_max": 5, "editorial_id": 2 },
-  { "id": 3, "titulo": "Terraforming Mars", "genero": "Estrategia", "complejidad": "Alta", "jugadores_min": 1, "jugadores_max": 5, "editorial_id": 3 },
-  { "id": 4, "titulo": "Azul", "genero": "Abstracto", "complejidad": "Baja", "jugadores_min": 2, "jugadores_max": 4, "editorial_id": 2 },
-  { "id": 5, "titulo": "Wingspan", "genero": "Engine building", "complejidad": "Media", "jugadores_min": 1, "jugadores_max": 5, "editorial_id": 1 },
-  { "id": 6, "titulo": "Gloomhaven", "genero": "Cooperativo/Campaña", "complejidad": "Alta", "jugadores_min": 1, "jugadores_max": 4, "editorial_id": 3 }
-]
