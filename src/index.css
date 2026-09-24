@@ -489,6 +489,44 @@ select.text-input:focus {
   box-shadow: 0 0 0 2px rgba(255, 206, 18, 0.45);
 }
 
+.combobox {
+  position: relative;
+}
+
+.combobox-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.3rem;
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--surface-lowest);
+  border: 1.5px solid var(--surface-variant);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md, var(--shadow-sm));
+}
+
+.combobox-list li {
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  color: var(--on-surface);
+  cursor: pointer;
+}
+
+.combobox-list li:hover {
+  background: var(--surface-container);
+}
+
+.combobox-empty {
+  color: var(--on-surface-variant);
+  cursor: default;
+}
+
 /* ---------- tablas ---------- */
 .data-table {
   width: 100%;

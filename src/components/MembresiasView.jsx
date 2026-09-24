@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Panel from './Panel';
 import { getClientes, getReservasDeCliente, crearReserva } from '../services/membresiasApi';
 import { SERVICE_URLS } from '../config';
@@ -16,6 +16,8 @@ export default function MembresiasView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [clienteId, setClienteId] = useState('');
+  const [clienteQuery, setClienteQuery] = useState('');
+  const [clienteAbierto, setClienteAbierto] = useState(false);
   const [reservas, setReservas] = useState(null);
   const [mesa, setMesa] = useState('');
   const [horario, setHorario] = useState('');
@@ -45,6 +47,21 @@ export default function MembresiasView() {
     }
   }
 
+  const q = clienteQuery.trim().toLowerCase();
+  const clientesFiltrados = q
+    ? clientes.filter(
+        (c) =>
+          (c.nombre || '').toLowerCase().includes(q) ||
+          (c.plan || '').toLowerCase().includes(q)
+      )
+    : clientes;
+
+  function elegirCliente(c) {
+    setClienteId(c._id);
+    setClienteQuery(c.nombre);
+    setClienteAbierto(false);
+  }
+
     async function enviarReserva() {
     if (!clienteId || !mesa || !horario) {
       setMensajeReserva('Completa cliente, mesa y horario antes de reservar.');
@@ -52,7 +69,8 @@ export default function MembresiasView() {
     }
     try {
       setError(null);
-      const clienteActualizado = await crearReserva(clienteId, { mesa: Number(mesa), horario, estado: 'confirmada' });
+      const horarioIso = new Date(horario).toISOString();
+      const clienteActualizado = await crearReserva(clienteId, { mesa: Number(mesa), horario: horarioIso, estado: 'confirmada' });
       const nueva = clienteActualizado.reservas.at(-1);
       setMensajeReserva(`Reserva creada: mesa ${nueva.mesa}, estado "${nueva.estado}".`);
       setClientes((prev) => prev.map((c) => (c._id === clienteId ? clienteActualizado : c)));
@@ -67,14 +85,41 @@ export default function MembresiasView() {
       title="Membresías y reservas"
     >
       <div className="action-row">
-        <select className="text-input" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
-          <option value="">Selecciona un cliente</option>
-          {clientes.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.nombre} ({c.plan})
-            </option>
-          ))}
-        </select>
+        <div className="combobox">
+          <input
+            className="text-input"
+            placeholder="Selecciona un cliente (escribe para buscar)"
+            value={clienteQuery}
+            onChange={(e) => {
+              setClienteQuery(e.target.value);
+              setClienteAbierto(true);
+            }}
+            onFocus={() => setClienteAbierto(true)}
+            onBlur={() => setTimeout(() => setClienteAbierto(false), 120)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && clientesFiltrados[0]) {
+                elegirCliente(clientesFiltrados[0]);
+              }
+            }}
+          />
+          {clienteAbierto && (
+            <ul className="combobox-list">
+              {clientesFiltrados.length === 0 ? (
+                <li className="combobox-empty">Sin coincidencias</li>
+              ) : (
+                clientesFiltrados.slice(0, 80).map((c) => (
+                  <li
+                    key={c._id}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => elegirCliente(c)}
+                  >
+                    {c.nombre} ({c.plan})
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
         <button className="action" onClick={consultarReservas}>
           Ver reservas del cliente
         </button>
@@ -83,8 +128,8 @@ export default function MembresiasView() {
       <div className="action-row">
         <input className="text-input" placeholder="Mesa, ej. 3" value={mesa} onChange={(e) => setMesa(e.target.value)} style={{ minWidth: 100 }} />
         <input
+          type="datetime-local"
           className="text-input"
-          placeholder="Horario ISO, ej. 2026-09-15T19:00:00Z"
           value={horario}
           onChange={(e) => setHorario(e.target.value)}
         />

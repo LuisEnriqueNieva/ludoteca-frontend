@@ -11,15 +11,26 @@ function formatFecha(iso) {
 }
 
 export default function PerfilView() {
-  const [nombre, setNombre] = useState('María');
+  const [nombre, setNombre] = useState('');
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [nombresDisponibles, setNombresDisponibles] = useState([]);
+  const [nombreAbierto, setNombreAbierto] = useState(false);
 
   useEffect(() => {
     getListaClientes().then(setNombresDisponibles).catch(() => {});
   }, []);
+
+  const q = nombre.trim().toLowerCase();
+  const nombresFiltrados = q
+    ? nombresDisponibles.filter((n) => n.toLowerCase().includes(q))
+    : nombresDisponibles;
+
+  function elegirNombre(n) {
+    setNombre(n);
+    setNombreAbierto(false);
+  }
 
   async function buscarPerfil() {
     if (!nombre) return;
@@ -50,18 +61,41 @@ export default function PerfilView() {
       title="Ficha de cliente (agregador)"
     >
       <div className="action-row">
-        <input
-          className="text-input"
-          list="lista-clientes"
-          placeholder="Nombre del cliente, ej. Ana"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-        />
-        <datalist id="lista-clientes">
-          {nombresDisponibles.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
+        <div className="combobox">
+          <input
+            className="text-input"
+            placeholder="Nombre del cliente, ej. Ana (escribe para buscar)"
+            value={nombre}
+            onChange={(e) => {
+              setNombre(e.target.value);
+              setNombreAbierto(true);
+            }}
+            onFocus={() => setNombreAbierto(true)}
+            onBlur={() => setTimeout(() => setNombreAbierto(false), 120)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && nombresFiltrados[0]) {
+                elegirNombre(nombresFiltrados[0]);
+              }
+            }}
+          />
+          {nombreAbierto && (
+            <ul className="combobox-list">
+              {nombresFiltrados.length === 0 ? (
+                <li className="combobox-empty">Sin coincidencias</li>
+              ) : (
+                nombresFiltrados.slice(0, 80).map((n) => (
+                  <li
+                    key={n}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => elegirNombre(n)}
+                  >
+                    {n}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
         <button className="action" onClick={buscarPerfil} disabled={loading}>
           {loading ? 'Consultando…' : 'Armar ficha del cliente'}
         </button>

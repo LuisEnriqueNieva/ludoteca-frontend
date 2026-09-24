@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
+import Combobox from './Combobox';
 import { getPartidas,
   getPartidaPorId,
   getPartidasPorJugador,
@@ -8,6 +9,7 @@ import { getPartidas,
   eliminarPartida,
 } from '../services/partidasApi';
 import { getJuegos } from '../services/catalogoApi';
+import { getListaClientes } from '../services/perfilApi';
 
 function formatFecha(iso) {
   try {
@@ -17,18 +19,13 @@ function formatFecha(iso) {
   }
 }
 
-function parseJugadores(texto) {
-  return texto
-    .split(',')
-    .map((n) => n.trim())
-    .filter(Boolean);
-}
-
-const FORM_VACIO = { mesa: '', juego_id: '', fecha: '', resultado: '', jugadores: '' };
+const FORM_VACIO = { mesa: '', juego_id: '', fecha: '', resultado: '', jugadores: ['', ''] };
+const MESAS = Array.from({ length: 20 }, (_, i) => String(i + 1));
 
 export default function PartidasView({ partidaInicial }) {
   const [partidas, setPartidas] = useState([]);
   const [juegos, setJuegos] = useState([]);
+  const [jugadoresDisponibles, setJugadoresDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mensajeOk, setMensajeOk] = useState('');
@@ -55,6 +52,10 @@ export default function PartidasView({ partidaInicial }) {
 
   useEffect(() => {
     getJuegos().then(setJuegos).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getListaClientes().then(setJugadoresDisponibles).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -123,22 +124,87 @@ export default function PartidasView({ partidaInicial }) {
     setJugadorFiltro('');
   }
 
-  function resolverJuegoId(valor) {
+  function resolverJuego(valor) {
     const limpio = String(valor).trim();
-    if (/^\d+$/.test(limpio)) return Number(limpio);
-    const match = juegos.find((j) => j.titulo.toLowerCase() === limpio.toLowerCase());
-    return match ? match.id : null;
+    if (/^\d+$/.test(limpio)) return juegos.find((j) => j.id === Number(limpio)) ?? null;
+    return juegos.find((j) => j.titulo.toLowerCase() === limpio.toLowerCase()) ?? null;
+  }
+
+  function resolverJuegoId(valor) {
+    return resolverJuego(valor)?.id ?? null;
+  }
+
+  const juegoCrear = resolverJuego(formCrear.juego_id);
+  const minJugadores = Math.max(2, Number(juegoCrear?.jugadores_min) || 2);
+  const maxJugadores = Number(juegoCrear?.jugadores_max) || Infinity;
+  const jugadoresLlenos = (formCrear.jugadores || []).map((s) => s.trim()).filter(Boolean);
+
+  function onJuegoChange(valor) {
+    const juego = resolverJuego(valor);
+    setFormCrear((prev) => {
+      if (!juego) return { ...prev, juego_id: valor };
+      const nuevoMin = Math.max(2, Number(juego.jugadores_min) || 2);
+      const actual = Array.isArray(prev.jugadores) ? prev.jugadores : ['', ''];
+      const jugadores =
+        actual.length === nuevoMin
+          ? actual
+          : Array.from({ length: nuevoMin }, (_, i) => actual[i] ?? '');
+      return { ...prev, juego_id: valor, jugadores };
+    });
+  }
+
+  function cambiarJugador(i, v) {
+    setFormCrear((prev) => {
+      const jugadores = [...(prev.jugadores || ['', ''])];
+      jugadores[i] = v;
+      return { ...prev, jugadores };
+    });
+  }
+
+  function agregarJugador() {
+    setFormCrear((prev) => ({ ...prev, jugadores: [...(prev.jugadores || ['', '']), ''] }));
+  }
+
+  function quitarJugador(i) {
+    setFormCrear((prev) => ({
+      ...prev,
+      jugadores: (prev.jugadores || ['', '']).filter((_, j) => j !== i),
+    }));
   }
 
   async function handleCrear(e) {
     e.preventDefault();
     setError(null);
     setMensajeOk('');
-    const juegoId = resolverJuegoId(formCrear.juego_id);
-    if (juegoId == null) {
+    if (!formCrear.mesa.trim()) {
+      setError('Completa la mesa.');
+      return;
+    }
+    if (!formCrear.resultado.trim()) {
+      setError('Completa el resultado de la partida.');
+      return;
+    }
+    const juego = resolverJuego(formCrear.juego_id);
+    if (!juego) {
       setError(`No se encontró el juego "${formCrear.juego_id}". Usa su ID o su nombre exacto.`);
       return;
     }
+    const min = Math.max(2, Number(juego.jugadores_min) || 2);
+    const max = Number(juego.jugadores_max) || Infinity;
+    if (jugadoresLlenos.length < min) {
+      setError(`Este juego necesita al menos ${min} jugadores (escribe todos los huecos).`);
+      return;
+    }
+    if (jugadoresLlenos.length > max) {
+      setError(`Este juego permite como máximo ${max} jugadores.`);
+      return;
+    }
+    const unicos = new Set(jugadoresLlenos.map((n) => n.toLowerCase()));
+    if (unicos.size !== jugadoresLlenos.length) {
+      setError('No se puede repetir a la misma persona como jugador.');
+      return;
+    }
+    const juegoId = resolverJuegoId(formCrear.juego_id);
     try {
       setCreando(true);
       await crearPartida({
@@ -146,10 +212,10 @@ export default function PartidasView({ partidaInicial }) {
         juego_id: juegoId,
         fecha: formCrear.fecha,
         resultado: formCrear.resultado,
-        jugadores: parseJugadores(formCrear.jugadores),
+        jugadores: jugadoresLlenos,
       });
       setMensajeOk('Partida creada correctamente.');
-      setFormCrear(FORM_VACIO);
+      setFormCrear({ ...FORM_VACIO });
       await refrescarListaActual();
     } catch (err) {
       setError(err.message);
@@ -165,7 +231,6 @@ export default function PartidasView({ partidaInicial }) {
       juego_id: p.juego_id,
       fecha: (p.fecha || '').slice(0, 10),
       resultado: p.resultado,
-      jugadores: '',
     });
   }
 
@@ -265,20 +330,17 @@ export default function PartidasView({ partidaInicial }) {
       )}
 
       <form className="action-row" onSubmit={handleCrear} style={{ flexWrap: 'wrap' }}>
-        <input
-          className="text-input"
-          type="number"
-          placeholder="Mesa"
+        <Combobox
+          items={MESAS}
           value={formCrear.mesa}
-          onChange={(e) => setFormCrear({ ...formCrear, mesa: e.target.value })}
-          required
+          onChange={(v) => setFormCrear({ ...formCrear, mesa: v })}
+          placeholder="Mesa"
         />
-        <input
-          className="text-input"
-          placeholder="ID o nombre del juego"
+        <Combobox
+          items={juegos.map((j) => j.titulo)}
           value={formCrear.juego_id}
-          onChange={(e) => setFormCrear({ ...formCrear, juego_id: e.target.value })}
-          required
+          onChange={onJuegoChange}
+          placeholder="ID o nombre del juego"
         />
         <input
           className="text-input"
@@ -287,20 +349,47 @@ export default function PartidasView({ partidaInicial }) {
           onChange={(e) => setFormCrear({ ...formCrear, fecha: e.target.value })}
           required
         />
-        <input
-          className="text-input"
-          placeholder="Resultado, ej. Ganó Marta"
+        <Combobox
+          items={jugadoresLlenos}
           value={formCrear.resultado}
-          onChange={(e) => setFormCrear({ ...formCrear, resultado: e.target.value })}
-          required
+          onChange={(v) => setFormCrear({ ...formCrear, resultado: v })}
+          placeholder={jugadoresLlenos.length > 0 ? `Resultado, ej. Ganó ${jugadoresLlenos[0]}` : 'Resultado'}
         />
-        <input
-          className="text-input"
-          placeholder="Jugadores separados por coma"
-          value={formCrear.jugadores}
-          onChange={(e) => setFormCrear({ ...formCrear, jugadores: e.target.value })}
-          required
-        />
+        {(formCrear.jugadores || ['', '']).map((jugador, i) => {
+          const otros = (formCrear.jugadores || []).filter((_, j) => j !== i);
+          return (
+            <div key={i} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <Combobox
+                items={jugadoresDisponibles}
+                value={jugador}
+                onChange={(v) => cambiarJugador(i, v)}
+                placeholder={`Jugador ${i + 1}`}
+                exclude={otros}
+              />
+              {formCrear.jugadores.length > minJugadores && (
+                <button type="button" className="action" onClick={() => quitarJugador(i)}>
+                  Quitar
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {formCrear.jugadores.length < maxJugadores && (
+          <button type="button" className="action" onClick={agregarJugador}>
+            + Agregar jugador
+          </button>
+        )}
+        {juegoCrear && (
+          <span style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>
+            {minJugadores}-{maxJugadores === Infinity ? '?' : maxJugadores} jugadores
+          </span>
+        )}
+        {jugadoresLlenos.length > 0 &&
+          new Set(jugadoresLlenos.map((n) => n.toLowerCase())).size !== jugadoresLlenos.length && (
+            <p style={{ color: '#b3261e', margin: '0.2rem 0', fontSize: '0.85rem', width: '100%' }}>
+              No puedes repetir al mismo jugador en una partida.
+            </p>
+          )}
         <button className="action" type="submit" disabled={creando}>
           {creando ? 'Creando…' : 'Registrar partida (POST)'}
         </button>
