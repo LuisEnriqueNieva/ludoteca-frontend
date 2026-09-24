@@ -32,8 +32,7 @@ export default function AnaliticaView() {
 
   return (
     <Panel
-      title="Analítica de la red de cafés"
-      endpoints={['GET /analitica/juego-mas-jugado', 'GET /analitica/membresia-vs-frecuencia', 'GET /analitica/horario-pico']}
+      title="Analítica de la ludoteca"
     >
       {loading && <p className="loading-note">Consultando analítica…</p>}
       {error && <p className="error-note">{error}</p>}
@@ -41,12 +40,11 @@ export default function AnaliticaView() {
       {!loading && !error && (
         <>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', margin: '0 0 0.6rem' }}>
-            Juego más jugado por complejidad
+            Juegos más jugados
           </h3>
           <div className="stat-grid" style={{ marginBottom: '1.4rem' }}>
             {porComplejidad.map((row) => (
               <div className="stat-card" key={row.titulo}>
-                <div className="stat-label">Complejidad {row.complejidad}</div>
                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>
                   {row.titulo}
                 </div>

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
-import {
-  getPartidas,
+import { getPartidas,
   getPartidaPorId,
   getPartidasPorJugador,
   crearPartida,
   actualizarPartida,
   eliminarPartida,
 } from '../services/partidasApi';
+import { getJuegos } from '../services/catalogoApi';
 
 function formatFecha(iso) {
   try {
@@ -26,8 +26,9 @@ function parseJugadores(texto) {
 
 const FORM_VACIO = { mesa: '', juego_id: '', fecha: '', resultado: '', jugadores: '' };
 
-export default function PartidasView() {
+export default function PartidasView({ partidaInicial }) {
   const [partidas, setPartidas] = useState([]);
+  const [juegos, setJuegos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mensajeOk, setMensajeOk] = useState('');
@@ -51,6 +52,24 @@ export default function PartidasView() {
   useEffect(() => {
     cargarPartidas();
   }, []);
+
+  useEffect(() => {
+    getJuegos().then(setJuegos).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!partidaInicial) return;
+    setIdBuscado(String(partidaInicial));
+    getPartidaPorId(partidaInicial)
+      .then((p) => {
+        setDetalle(p);
+        setError(null);
+      })
+      .catch((err) => {
+        setDetalle(null);
+        setError(err.message);
+      });
+  }, [partidaInicial]);
 
   async function cargarPartidas() {
     setLoading(true);
@@ -104,15 +123,27 @@ export default function PartidasView() {
     setJugadorFiltro('');
   }
 
+  function resolverJuegoId(valor) {
+    const limpio = String(valor).trim();
+    if (/^\d+$/.test(limpio)) return Number(limpio);
+    const match = juegos.find((j) => j.titulo.toLowerCase() === limpio.toLowerCase());
+    return match ? match.id : null;
+  }
+
   async function handleCrear(e) {
     e.preventDefault();
     setError(null);
     setMensajeOk('');
+    const juegoId = resolverJuegoId(formCrear.juego_id);
+    if (juegoId == null) {
+      setError(`No se encontró el juego "${formCrear.juego_id}". Usa su ID o su nombre exacto.`);
+      return;
+    }
     try {
       setCreando(true);
       await crearPartida({
         mesa: Number(formCrear.mesa),
-        juego_id: Number(formCrear.juego_id),
+        juego_id: juegoId,
         fecha: formCrear.fecha,
         resultado: formCrear.resultado,
         jugadores: parseJugadores(formCrear.jugadores),
@@ -185,14 +216,6 @@ export default function PartidasView() {
   return (
     <Panel
       title="Partidas jugadas"
-      endpoints={[
-        'GET /partidas',
-        'GET /partidas/{id}',
-        'GET /partidas?jugador=',
-        'POST /partidas',
-        'PUT /partidas/{id}',
-        'DELETE /partidas/{id}',
-      ]}
     >
       <div className="action-row">
         <input
@@ -202,7 +225,7 @@ export default function PartidasView() {
           onChange={(e) => setIdBuscado(e.target.value)}
         />
         <button className="action" onClick={buscarPartida}>
-          Consultar GET /partidas/{'{id}'}
+          Consultar detalle
         </button>
       </div>
 
@@ -252,8 +275,7 @@ export default function PartidasView() {
         />
         <input
           className="text-input"
-          type="number"
-          placeholder="ID del juego"
+          placeholder="ID o nombre del juego"
           value={formCrear.juego_id}
           onChange={(e) => setFormCrear({ ...formCrear, juego_id: e.target.value })}
           required

@@ -9,17 +9,18 @@ import { getServiciosSaludables } from './services/health';
 
 const MESAS = [
   { id: 'operativo', label: 'Panel Operativo', Componente: OperativoView },
-  { id: 'catalogo', label: 'Catálogo (MS1)', Componente: CatalogoView },
-  { id: 'partidas', label: 'Partidas (MS2)', Componente: PartidasView },
-  { id: 'membresias', label: 'Reservas (MS3)', Componente: MembresiasView },
-  { id: 'perfil', label: 'Clientes (MS4)', Componente: PerfilView },
-  { id: 'analitica', label: 'Analítica (MS5)', Componente: AnaliticaView },
+  { id: 'catalogo', label: 'Catálogo', Componente: CatalogoView },
+  { id: 'partidas', label: 'Partidas', Componente: PartidasView },
+  { id: 'membresias', label: 'Reservas', Componente: MembresiasView },
+  { id: 'perfil', label: 'Clientes', Componente: PerfilView },
+  { id: 'analitica', label: 'Analítica', Componente: AnaliticaView },
 ];
 
 const HEALTH_POLL_MS = 30000;
 
 export default function App() {
   const [mesaActiva, setMesaActiva] = useState('operativo');
+  const [partidaInicial, setPartidaInicial] = useState(null);
   const [salud, setSalud] = useState(null);
   const [saludError, setSaludError] = useState(false);
   const Activo = MESAS.find((m) => m.id === mesaActiva)?.Componente ?? OperativoView;
@@ -89,7 +90,14 @@ export default function App() {
 
       <main className="app-main">
         <div className="app-shell">
-          <Activo onNavigate={setMesaActiva} />
+          <Activo
+            onNavigate={setMesaActiva}
+            onVerPartida={(id) => {
+              setPartidaInicial(id);
+              setMesaActiva('partidas');
+            }}
+            partidaInicial={mesaActiva === 'partidas' ? partidaInicial : null}
+          />
         </div>
       </main>
 

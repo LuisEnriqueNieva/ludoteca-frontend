@@ -7,6 +7,7 @@ export default function CatalogoView() {
   const [juegos, setJuegos] = useState([]);
   const [editoriales, setEditoriales] = useState([]);
   const [seleccionId, setSeleccionId] = useState('');
+  const [busquedaNombre, setBusquedaNombre] = useState('');
   const [detalle, setDetalle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +31,11 @@ export default function CatalogoView() {
 
   const nombreEditorial = (id) => editoriales.find((e) => e.id === id)?.nombre ?? `#${id}`;
 
+  const filtro = busquedaNombre.trim().toLowerCase();
+  const juegosFiltrados = filtro
+    ? juegos.filter((j) => j.titulo.toLowerCase().includes(filtro))
+    : juegos;
+
   async function consultarDetalle() {
     if (!seleccionId) return;
     try {
@@ -45,9 +51,14 @@ export default function CatalogoView() {
   return (
     <Panel
       title="Catálogo de juegos de mesa"
-      endpoints={['GET /juegos', 'GET /juegos/{id}', 'GET /editoriales']}
     >
       <div className="action-row">
+        <input
+          className="text-input"
+          placeholder="Buscar por nombre, ej. Catan"
+          value={busquedaNombre}
+          onChange={(e) => setBusquedaNombre(e.target.value)}
+        />
         <input
           className="text-input"
           placeholder="ID de juego, ej. 3"
@@ -55,7 +66,7 @@ export default function CatalogoView() {
           onChange={(e) => setSeleccionId(e.target.value)}
         />
         <button className="action" onClick={consultarDetalle}>
-          Consultar GET /juegos/{'{id}'}
+          Consultar detalle
         </button>
       </div>
 
@@ -73,8 +84,8 @@ export default function CatalogoView() {
 
       {loading ? (
         <p className="loading-note">Cargando catálogo…</p>
-      ) : juegos.length === 0 ? (
-        <p className="empty-note">No hay juegos registrados todavía.</p>
+      ) : juegosFiltrados.length === 0 ? (
+        <p className="empty-note">No hay juegos que coincidan con "{busquedaNombre}".</p>
       ) : (
         <table className="data-table">
           <thead>
@@ -87,7 +98,7 @@ export default function CatalogoView() {
             </tr>
           </thead>
           <tbody>
-            {juegos.slice(0, 300).map((j) => (
+            {juegosFiltrados.slice(0, 300).map((j) => (
               <tr key={j.id}>
                 <td>{j.titulo}</td>
                 <td>{j.genero}</td>

@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import Panel from './Panel';
 import { getPerfilJugador, getListaClientes } from '../services/perfilApi';
-import { SERVICE_URLS } from '../config';
+
+function formatFecha(iso) {
+  try {
+    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return iso;
+  }
+}
 
 export default function PerfilView() {
   const [nombre, setNombre] = useState('María');
@@ -29,10 +36,18 @@ export default function PerfilView() {
     }
   }
 
+  const juegos = perfil
+    ? [...new Set(perfil.partidas.map((p) => p.juego_nombre))]
+        .map((juego_nombre) => ({
+          juego_nombre,
+          veces: perfil.partidas.filter((p) => p.juego_nombre === juego_nombre).length,
+        }))
+        .sort((a, b) => b.veces - a.veces)
+    : [];
+
   return (
     <Panel
       title="Ficha de cliente (agregador)"
-      endpoints={['GET /perfil', 'GET /perfil/lista']}
     >
       <div className="action-row">
         <input
@@ -73,12 +88,70 @@ export default function PerfilView() {
               <div className="stat-value">{perfil.reservas.length}</div>
             </div>
           </div>
-          <p style={{ margin: 0, fontSize: '0.88rem' }}>
-            <strong>Juegos jugados:</strong>{' '}
-            {perfil.partidas.length > 0
-              ? [...new Set(perfil.partidas.map((p) => p.juego_nombre))].join(', ')
-              : 'ninguno registrado'}
-          </p>
+
+          <div className="card" style={{ marginTop: '1rem' }}>
+            <div className="card-head">
+              <div>
+                <span className="eyebrow">Juegos jugados</span>
+                <h3 className="card-title" style={{ margin: 0, fontSize: '1rem' }}>
+                  Títulos más frecuentes
+                </h3>
+              </div>
+            </div>
+            {juegos.length === 0 ? (
+              <p className="empty-note">Ningún juego registrado.</p>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Juego</th>
+                    <th style={{ textAlign: 'right' }}>Partidas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {juegos.map((j) => (
+                    <tr key={j.juego_nombre}>
+                      <td>{j.juego_nombre}</td>
+                      <td style={{ textAlign: 'right' }}>{j.veces}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="card" style={{ marginTop: '1rem' }}>
+            <div className="card-head">
+              <div>
+                <span className="eyebrow">Próximas reservas</span>
+                <h3 className="card-title" style={{ margin: 0, fontSize: '1rem' }}>
+                  Reservas del cliente
+                </h3>
+              </div>
+            </div>
+            {perfil.reservas.length === 0 ? (
+              <p className="empty-note">No hay reservas registradas.</p>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mesa</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {perfil.reservas.map((r, i) => (
+                    <tr key={i}>
+                      <td>Mesa {String(r.mesa).padStart(2, '0')}</td>
+                      <td>{formatFecha(r.horario)}</td>
+                      <td>{r.estado}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
     </Panel>

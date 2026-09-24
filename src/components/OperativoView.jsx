@@ -3,7 +3,6 @@ import { getJuegos, getEditoriales } from '../services/catalogoApi';
 import { getPartidas } from '../services/partidasApi';
 import { getClientes } from '../services/membresiasApi';
 import { getJuegoMasJugado, getHorarioPico } from '../services/analiticaApi';
-import { SERVICE_URLS } from '../config';
 
 function formatFecha(iso) {
   try {
@@ -21,29 +20,13 @@ function formatHora(iso) {
   }
 }
 
-const TECH = {
-  catalogo: 'Python 3.11 + MySQL',
-  partidas: 'Java 17 + PostgreSQL',
-  membresias: 'Node.js 20 + MongoDB',
-  perfil: 'Agregador Gateway',
-  analitica: 'Python + AWS Athena',
-};
-
-const SERVICIOS = [
-  { id: 'catalogo', nombre: 'MS1 Catálogo', url: SERVICE_URLS.catalogo },
-  { id: 'partidas', nombre: 'MS2 Partidas', url: SERVICE_URLS.partidas },
-  { id: 'membresias', nombre: 'MS3 Reservas', url: SERVICE_URLS.membresias },
-  { id: 'perfil', nombre: 'MS4 Clientes', url: SERVICE_URLS.perfil },
-  { id: 'analitica', nombre: 'MS5 Analítica', url: SERVICE_URLS.analitica },
-];
-
 function formatHoraSync(d) {
   return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 const POLLING_MS = 20000;
 
-export default function OperativoView({ onNavigate }) {
+export default function OperativoView({ onNavigate, onVerPartida }) {
   const [juegos, setJuegos] = useState([]);
   const [editoriales, setEditoriales] = useState([]);
   const [partidas, setPartidas] = useState([]);
@@ -87,7 +70,7 @@ export default function OperativoView({ onNavigate }) {
       setPorComplejidad(juego ?? []);
       setHorarioPico(horario ?? []);
     } catch (err) {
-      console.log('MS5 (analítica) no disponible todavía:', err.message);
+      console.log('Analítica no disponible todavía:', err.message);
       setPorComplejidad([]);
       setHorarioPico([]);
     }
@@ -144,7 +127,7 @@ export default function OperativoView({ onNavigate }) {
             </span>
           </div>
           <p className="disp-sub">
-            Orquestación de microservicios y monitorización en tiempo real del café de juegos.
+            Orquestación de microservicios y monitorización en tiempo real de la ludoteca.
             Visualizando telemetría agregada de mesas, reservas e inventario lúdico.
           </p>
         </div>
@@ -185,7 +168,7 @@ export default function OperativoView({ onNavigate }) {
                 <span className="material-symbols-outlined kpi-icon accent">table_restaurant</span>
               </div>
               <div className="kpi-value">{mesasActivas}</div>
-              <div className="kpi-sub">Mesas con partidas registradas (MS2)</div>
+              <div className="kpi-sub">Mesas con partidas registradas</div>
             </div>
 
             <div className="kpi-card">
@@ -194,7 +177,7 @@ export default function OperativoView({ onNavigate }) {
                 <span className="material-symbols-outlined kpi-icon">person_check</span>
               </div>
               <div className="kpi-value strong">{clientes.length}</div>
-              <div className="kpi-sub">Total en membresías (MS3)</div>
+              <div className="kpi-sub">Total en membresías</div>
             </div>
 
             <div className="kpi-card">
@@ -235,35 +218,6 @@ export default function OperativoView({ onNavigate }) {
             )}
           </section>
 
-          <section className="stack">
-            <div className="sec-head">
-              <div className="sec-grid">
-                <div className="sec-title">
-                  <span className="material-symbols-outlined icon-sm">hub</span>
-                  <span className="sec-name">Arquitectura de Microservicios</span>
-                </div>
-                <span className="sec-meta">5 servicios · Gateway</span>
-              </div>
-            </div>
-            <div className="ms-grid">
-              {SERVICIOS.map((s) => (
-                <div className="ms-card" key={s.id}>
-                  <div className="ms-card-top">
-                    <div className="ms-card-head">
-                      <span className="ms-title">{s.nombre}</span>
-                    </div>
-                    <span className="ms-tech">{TECH[s.id]}</span>
-                    <span className="ms-url">{s.url}</span>
-                  </div>
-                  <button className="ms-go" onClick={() => onNavigate(s.id)}>
-                    <span>Ir a pestaña</span>
-                    <span className="material-symbols-outlined icon-sm">arrow_forward</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-
           <div className="home-cols">
             <div className="stack">
               {/* Distribución de carga */}
@@ -271,7 +225,7 @@ export default function OperativoView({ onNavigate }) {
                 <div className="card-head">
                   <div>
                     <span className="eyebrow">Distribución de Carga</span>
-                    <h2 className="card-title">Horario de Mayor Demanda en Café</h2>
+                    <h2 className="card-title">Horario de Mayor Demanda</h2>
                   </div>
                   <div className="legend">
                     <span className="legend-item">
@@ -324,7 +278,6 @@ export default function OperativoView({ onNavigate }) {
                     <span className="material-symbols-outlined icon-sm">info</span>
                     {' '}Franja de mayor demanda según reservas confirmadas.
                   </span>
-                  <span className="code">Fuente: GET /analitica/horario-pico (MS5)</span>
                 </div>
               </div>
 
@@ -336,7 +289,7 @@ export default function OperativoView({ onNavigate }) {
                     <h2 className="card-title">Últimas Partidas Registradas</h2>
                   </div>
                   <button className="card-link" onClick={() => onNavigate('partidas')}>
-                    <span>Ver todas en MS2</span>
+                    <span>Ver todas</span>
                     <span className="material-symbols-outlined icon-sm">open_in_new</span>
                   </button>
                 </div>
@@ -373,7 +326,7 @@ export default function OperativoView({ onNavigate }) {
                               </span>
                             </td>
                             <td style={{ textAlign: 'right' }}>
-                              <button className="row-action" title="Detalle de partida">
+                              <button className="row-action" title="Detalle de partida" onClick={() => onVerPartida(p.id)}>
                                 <span className="material-symbols-outlined icon-lg">read_more</span>
                               </button>
                             </td>
@@ -385,7 +338,7 @@ export default function OperativoView({ onNavigate }) {
                 )}
 
                 <div className="table-foot">
-                  <span>Sincronizado vía MS2 real (offset local)</span>
+                  <span>Sincronizado en tiempo real</span>
                   <button className="foot-link" onClick={() => onNavigate('partidas')}>
                     <span className="material-symbols-outlined icon-sm">add_circle</span>
                     <span>Registrar Partida Manual</span>
@@ -403,7 +356,7 @@ export default function OperativoView({ onNavigate }) {
                     <h2 className="card-title">Próximas Reservas Confirmadas</h2>
                   </div>
                   <button className="action-dark" style={{ padding: '0.35rem 0.75rem', fontSize: '12px' }} onClick={() => onNavigate('membresias')}>
-                    MS3 Reservas
+                    Reservas
                   </button>
                 </div>
 
@@ -432,10 +385,6 @@ export default function OperativoView({ onNavigate }) {
                             <span className="material-symbols-outlined icon-sm">table_restaurant</span>
                             {' '}Mesa {String(r.mesa).padStart(2, '0')}
                           </span>
-                          <em>
-                            <span className="material-symbols-outlined icon-sm">casino</span>
-                            {' '}Juego por confirmar
-                          </em>
                         </div>
                       </div>
                     ))}

@@ -1,14 +1,20 @@
 # Ludoteca — Frontend
 
-Panel web (React + Vite) que consume los 5 microservicios del proyecto **Ludoteca / Red de Cafés de Juegos de Mesa**. Cada microservicio tiene su propia "mesa" en la interfaz, con al menos 2 métodos REST invocados.
+Panel web (React + Vite) que consume los 5 microservicios del proyecto **Ludoteca / Juegos de Mesa**. Cada microservicio tiene su propia pestaña en la interfaz, todas orquestadas bajo un único API Gateway.
 
-## Estado actual: modo mock
+## Cómo trabaja de verdad el frontend
 
-Como el resto de microservicios todavía se están construyendo, el frontend arranca con `VITE_USE_MOCKS=true`, que sirve datos simulados con **exactamente la misma forma** de lo que devolverán los backends reales. Esto permite:
-
-- Avanzar el frontend sin depender de que los demás terminen.
-- Desplegar ya mismo en Amplify.
-- Cambiar a datos reales solo tocando variables de entorno, sin tocar código.
+- **Un solo punto de entrada:** todo sale por el API Gateway configurado en `VITE_API_GATEWAY_URL` (actualmente apunta a `https://gd2m5wlwsh.execute-api.us-east-1.amazonaws.com`). El Gateway enruta por ruta: `/juegos/*`, `/editoriales/*`, `/partidas/*`, `/clientes/*`, `/perfil`, `/analitica/*` (rutas desnudas, sin stage ni prefijo).
+- **Sin mocks:** la app consulta los backends reales a través del Gateway. No existe `VITE_USE_MOCKS` ni carpeta `mocks/`.
+- **Overrides por servicio (dev):** `config.js` permite sobreescribir un microservicio puntual con `VITE_CATALOGO_URL`, `VITE_PARTIDAS_URL`, `VITE_MEMBRESIAS_URL`, `VITE_PERFIL_URL`, `VITE_ANALITICA_URL`. Si no se definen, todo sale por `VITE_API_GATEWAY_URL`. Último fallback: `localhost:800X`.
+- **Pestañas reales de la UI:**
+  - **Panel Operativo** — orquesta los 5 servicios en una sola vista: KPIs (catálogo, partidas, mesas activas, clientes, reservas), arquitectura de microservicios con acceso a cada pestaña, horario de mayor demanda (SVG), últimas partidas (con botón que abre el detalle en la pestaña Partidas) y próximas reservas confirmadas. Polling cada 20s.
+  - **Catálogo** — lista de juegos con filtro en vivo por nombre y consulta de detalle por ID.
+  - **Partidas** — CRUD completo (`GET/POST/PUT/DELETE`), filtro por jugador y consulta por ID. Al registrar, el campo de juego acepta **ID numérico o nombre exacto** (lo resuelve contra el catálogo).
+  - **Reservas** — lista de clientes y membresías, reservas por cliente y registro de nueva reserva (mesa + horario ISO + estado).
+  - **Clientes** — ficha de cliente (agregador): partidas jugadas, membresía, juegos más frecuentes y próximas reservas.
+  - **Analítica** — juegos más jugados, reservas totales según membresía y horario de mayor demanda.
+- **Healthcheck:** el footer verifica cada 30s (≈) si los 5 servicios responden a través del Gateway (`src/services/health.js`), mostrando `X/5 servicios respondiendo`.
 
 ## Paleta de colores
 
@@ -33,63 +39,51 @@ La identidad visual se define con variables CSS en `:root` del archivo `src/inde
 
 El **logo (dado)** usa un degradado fijo amarillo→magenta (`#ffce12 → #db0080`) definido en `.brand-icon` de `src/index.css`.
 
-## Microservicios y endpoints usados
+## Microservicios y endpoints consumidos
 
-| # | Microservicio | Archivo de servicio | Endpoints consumidos |
-|---|---|---|---|
-| 1 | Catálogo de juegos (Python/MySQL, :8001) | `src/services/catalogoApi.js` | `GET /juegos`, `GET /juegos/{id}`, `GET /editoriales` |
-| 2 | Partidas jugadas (Java/PostgreSQL, :8002) | `src/services/partidasApi.js` | `GET /partidas`, `GET /partidas/{id}` |
-| 3 | Membresías y reservas (Node/MongoDB, :8003) | `src/services/membresiasApi.js` | `GET /clientes`, `GET /clientes/{id}/reservas`, `POST /clientes/{id}/reservas` |
-| 4 | Perfil de jugador — agregador (:8004) | `src/services/perfilApi.js` | `GET /perfil/{nombre}` |
-| 5 | Analítico / Athena (Python, :8005) | `src/services/analiticaApi.js` | `GET /analitica/juego-mas-jugado`, `GET /analitica/membresia-vs-frecuencia`, `GET /analitica/horario-pico` |
+| Servicio | Archivo de servicio | Endpoints consumidos |
+|---|---|---|
+| Catálogo de juegos | `src/services/catalogoApi.js` | `GET /juegos`, `GET /juegos/{id}`, `GET /editoriales` |
+| Partidas jugadas | `src/services/partidasApi.js` | `GET /partidas`, `GET /partidas/{id}`, `GET /partidas?jugador=`, `POST /partidas`, `PUT /partidas/{id}`, `DELETE /partidas/{id}` |
+| Membresías y reservas | `src/services/membresiasApi.js` | `GET /clientes`, `GET /clientes/{id}/reservas`, `POST /clientes/{id}/reservas` |
+| Perfil de jugador (agregador) | `src/services/perfilApi.js` | `GET /perfil?nombre_jugador=`, `GET /perfil/lista` |
+| Analítica | `src/services/analiticaApi.js` | `GET /analitica/juego-mas-jugado`, `GET /analitica/membresia-vs-frecuencia`, `GET /analitica/horario-pico` |
 
 ## Ejecutar en local
 
 ```bash
 npm install
-cp .env.example .env.local   # deja VITE_USE_MOCKS=true mientras el backend no esté listo
+cp .env.example .env.local   # define VITE_API_GATEWAY_URL (u overrides por servicio)
 npm run dev
 ```
 
-## Pasar a microservicios reales
+`VITE_*` se hornean en el build de Vite: tras cambiar alguna variable hay que recompilar (`npm run build`) o redeployar.
 
-Cuando cada backend esté desplegado, en `.env.local` (o en las variables de entorno de Amplify):
+## Formas de datos que el frontend espera
 
-```
-VITE_USE_MOCKS=false
-VITE_CATALOGO_URL=https://tu-url-ms1
-VITE_PARTIDAS_URL=https://tu-url-ms2
-VITE_MEMBRESIAS_URL=https://tu-url-ms3
-VITE_PERFIL_URL=https://tu-url-ms4
-VITE_ANALITICA_URL=https://tu-url-ms5
-```
+Para que cada vista renderice sin campos vacíos, los backends deben devolver estas formas:
 
-No hace falta cambiar ningún componente: cada archivo en `src/services/` decide solo, según `VITE_USE_MOCKS`, si responde con datos simulados o llama al backend real.
+| Endpoint | Respuesta esperada |
+|---|---|
+| `GET /juegos` | `[{ id, titulo, genero, complejidad, jugadores_min, jugadores_max, editorial_id }]` |
+| `GET /juegos/{id}` | un objeto `juego` como el anterior |
+| `GET /editoriales` | `[{ id, nombre }]` |
+| `GET /partidas` | `[{ id, mesa, juego_id, fecha, resultado, partida_jugadores: [{ id, nombre_jugador }] }]` |
+| `GET /partidas/{id}` | una `partida` como la anterior |
+| `GET /clientes` | `[{ _id, nombre, plan, reservas: [{ mesa, horario, estado }] }]` (se usa `_id`, es MongoDB) |
+| `GET /clientes/{id}/reservas` | array de `reservas` |
+| `POST /clientes/{id}/reservas` | recibe `{ mesa, horario, estado }`, devuelve la reserva creada |
+| `GET /perfil?nombre_jugador=` | `{ jugador, membresia, partidas: [{ juego_nombre }], reservas: [{ mesa, horario, estado }] }` |
+| `GET /perfil/lista` | array de nombres de jugador |
+| `GET /analitica/juego-mas-jugado` | array de `[{ titulo, complejidad, veces_jugado }]` (no agrupado por complejidad; se muestra como lista) |
+| `GET /analitica/membresia-vs-frecuencia` | `[{ plan, total_reservas }]` |
+| `GET /analitica/horario-pico` | `[{ hora_del_dia, cantidad_reservas }]` |
 
-### Formas de datos que el frontend espera
-
-Verificar que cada backend devuelva **exactamente** estas formas (los mocks en `src/mocks/` las replican):
-
-| MS | Endpoint | Respuesta esperada |
-|---|---|---|
-| 1 | `GET /juegos` | `[{ id, titulo, genero, complejidad, jugadores_min, jugadores_max, editorial_id }]` |
-| 1 | `GET /juegos/{id}` | un objeto `juego` como el anterior |
-| 1 | `GET /editoriales` | `[{ id, nombre }]` |
-| 2 | `GET /partidas` | `[{ id, mesa, juego_id, fecha, resultado, partida_jugadores: [{ id, nombre_jugador }] }]` |
-| 2 | `GET /partidas/{id}` | una `partida` como la anterior |
-| 3 | `GET /clientes` | `[{ _id, nombre, plan, reservas: [{ mesa, horario, estado }] }]` (se usa `_id`, es MongoDB) |
-| 3 | `GET /clientes/{id}/reservas` | array de `reservas` |
-| 3 | `POST /clientes/{id}/reservas` | recibe `{ mesa, horario, estado }`, devuelve la reserva creada |
-| 4 | `GET /perfil/{nombre}` | `{ nombre_jugador, partidas_totales, membresia, proximas_reservas: [...], juegos_jugados: [...] }` |
-| 5 | `GET /analitica/juego-mas-jugado` | `{ por_complejidad: [{ complejidad, juego, veces_jugado }] }` |
-| 5 | `GET /analitica/membresia-vs-frecuencia` | `[{ plan, visitas_promedio_mes }]` |
-| 5 | `GET /analitica/horario-pico` | `[{ horario, reservas }]` |
-
-### Notas para pasar a reales
+### Notas
 
 - **CORS:** los 5 backends deben permitir el origen del frontend (`http://localhost:5173` en local y el dominio de Amplify en producción).
-- **Rebuild obligatorio:** las variables `VITE_*` se hornean en el build de Vite. Tras cambiarlas hay que recompilar (`npm run build`) o redeployar en Amplify.
-- **Coherencia:** el panel operativo consolida datos de MS1–3 + MS5; si un campo falta (p. ej. `reservas` o `partida_jugadores`), la UI mostrará valores vacíos. Valida las formas de arriba antes de desplegar.
+- **Horas:** `horario` se guarda en UTC (ISO con `Z`). Athena agrupa por hora UTC, por lo que el pico puede verse en horas que no corresponden a la zona local.
+- **Coherencia:** el Panel Operativo consolida los 5 servicios; si un campo falta, la UI mostrará valores vacíos.
 
 ## Desplegar en AWS Amplify
 
@@ -98,22 +92,22 @@ Verificar que cada backend devuelva **exactamente** estas formas (los mocks en `
 3. Amplify detecta Vite automáticamente. Si pide confirmar el build, usa:
    - Comando de build: `npm run build`
    - Directorio de salida: `dist`
-4. En **App settings → Environment variables**, agrega las mismas variables de `.env.example` (empiezan mientras tanto en modo mock).
-5. Deploy. Cuando los microservicios reales estén arriba (idealmente con HTTPS, porque Amplify sirve el sitio por HTTPS y los navegadores bloquean llamadas a `http://` desde una página `https://`), actualiza esas variables y vuelve a desplegar (o activa "Redeploy this version").
+4. En **App settings → Environment variables**, agrega `VITE_API_GATEWAY_URL` (y opcionalmente los `VITE_*_URL` por servicio) tal como en `.env.example`.
+5. Deploy. Como Amplify sirve el sitio por HTTPS, los backends deben estar también bajo HTTPS (los navegadores bloquean llamadas a `http://` desde una página `https://`).
 
 ## Estructura
 
 ```
 src/
-  config.js              # lee las variables de entorno (USE_MOCKS + URLs)
+  config.js              # lee las variables de entorno (gateway + overrides por servicio)
   services/
-    http.js              # helper fetch compartido
-    catalogoApi.js        # MS1
-    partidasApi.js         # MS2
-    membresiasApi.js       # MS3
-    perfilApi.js            # MS4
-    analiticaApi.js          # MS5
-  mocks/                 # JSON con la forma real de cada respuesta
-  components/            # una vista por microservicio + Panel reutilizable
-  App.jsx                # navegación entre las 5 "mesas"
+    http.js              # helper fetch compartido (GET/POST/PUT/DELETE)
+    catalogoApi.js        # Catálogo
+    partidasApi.js         # Partidas
+    membresiasApi.js       # Membresías
+    perfilApi.js            # Perfil
+    analiticaApi.js          # Analítica
+    health.js               # healthcheck de los 5 servicios (footer)
+  components/            # una vista por servicio + Panel reutilizable + OperativoView
+  App.jsx                # navegación entre pestañas + estado compartido
 ```

@@ -3,6 +3,14 @@ import Panel from './Panel';
 import { getClientes, getReservasDeCliente, crearReserva } from '../services/membresiasApi';
 import { SERVICE_URLS } from '../config';
 
+function formatFecha(iso) {
+  try {
+    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return iso;
+  }
+}
+
 export default function MembresiasView() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +65,6 @@ export default function MembresiasView() {
   return (
     <Panel
       title="Membresías y reservas"
-      endpoints={['GET /clientes', 'GET /clientes/{id}/reservas', 'POST /clientes/{id}/reservas']}
     >
       <div className="action-row">
         <select className="text-input" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
@@ -69,7 +76,7 @@ export default function MembresiasView() {
           ))}
         </select>
         <button className="action" onClick={consultarReservas}>
-          GET reservas del cliente
+          Ver reservas del cliente
         </button>
       </div>
 
@@ -98,7 +105,7 @@ export default function MembresiasView() {
             <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
               {reservas.map((r, i) => (
                 <li key={i}>
-                  Mesa {r.mesa} · {r.horario} · {r.estado}
+                  Mesa {r.mesa} · {formatFecha(r.horario)} · {r.estado}
                 </li>
               ))}
             </ul>
