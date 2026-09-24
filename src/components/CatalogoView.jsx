@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
+import Paginador from './Paginador';
 import { getJuegos, getEditoriales, getJuegoPorId } from '../services/catalogoApi';
 import { SERVICE_URLS } from '../config';
+
+const TAMANO_PAGINA = 20;
+
+function tituloLimpio(juego) {
+  return (juego?.titulo ?? '').replace(/[#\s]*\d+$/, '').trim();
+}
 
 export default function CatalogoView() {
   const [juegos, setJuegos] = useState([]);
@@ -11,6 +18,7 @@ export default function CatalogoView() {
   const [detalle, setDetalle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     let vivo = true;
@@ -29,12 +37,20 @@ export default function CatalogoView() {
     };
   }, []);
 
+  useEffect(() => {
+    setPagina(1);
+  }, [juegos, busquedaNombre]);
+
   const nombreEditorial = (id) => editoriales.find((e) => e.id === id)?.nombre ?? `#${id}`;
 
   const filtro = busquedaNombre.trim().toLowerCase();
   const juegosFiltrados = filtro
     ? juegos.filter((j) => j.titulo.toLowerCase().includes(filtro))
     : juegos;
+  const totalPaginas = Math.ceil(juegosFiltrados.length / TAMANO_PAGINA);
+  const paginaActual = Math.min(pagina, Math.max(1, totalPaginas));
+  const inicio = (paginaActual - 1) * TAMANO_PAGINA;
+  const juegosPagina = juegosFiltrados.slice(inicio, inicio + TAMANO_PAGINA);
 
   async function consultarDetalle() {
     if (!seleccionId) return;
@@ -74,7 +90,7 @@ export default function CatalogoView() {
 
       {detalle && (
         <div className="profile-card" style={{ marginBottom: '1.1rem' }}>
-          <h3>{detalle.titulo}</h3>
+          <h3>{tituloLimpio(detalle)}</h3>
           <p style={{ margin: 0 }}>
             {detalle.genero} · complejidad {detalle.complejidad} · {detalle.jugadores_min}-
             {detalle.jugadores_max} jugadores · editorial: {nombreEditorial(detalle.editorial_id)}
@@ -98,9 +114,9 @@ export default function CatalogoView() {
             </tr>
           </thead>
           <tbody>
-            {juegosFiltrados.slice(0, 300).map((j) => (
+            {juegosPagina.map((j) => (
               <tr key={j.id}>
-                <td>{j.titulo}</td>
+                <td>{tituloLimpio(j)}</td>
                 <td>{j.genero}</td>
                 <td>{j.complejidad}</td>
                 <td>
@@ -112,6 +128,12 @@ export default function CatalogoView() {
           </tbody>
         </table>
       )}
+      <Paginador
+        total={juegosFiltrados.length}
+        pagina={paginaActual}
+        tamano={TAMANO_PAGINA}
+        onCambioPagina={setPagina}
+      />
     </Panel>
   );
 }

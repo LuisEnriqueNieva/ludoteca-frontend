@@ -591,6 +591,63 @@ select.text-input:focus {
   color: var(--on-surface-variant);
 }
 
+/* ---------- paginador ---------- */
+.paginador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.paginador-info {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+.paginador-controles {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.paginador-grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.paginador-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-md, 8px);
+  background: transparent;
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.paginador-btn:hover:not(:disabled) {
+  background: var(--surface-container);
+}
+
+.paginador-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.paginador-ellipsis {
+  color: var(--on-surface-variant);
+  padding: 0 0.1rem;
+}
+
 /* ---------- KPIs ---------- */
 .stat-grid {
   display: grid;

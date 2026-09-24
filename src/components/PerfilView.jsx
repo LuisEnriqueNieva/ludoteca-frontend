@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import Panel from './Panel';
 import { getPerfilJugador, getListaClientes } from '../services/perfilApi';
-
-function formatFecha(iso) {
-  try {
-    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
+import { formatFecha } from '../services/format';
 
 export default function PerfilView() {
   const [nombre, setNombre] = useState('');

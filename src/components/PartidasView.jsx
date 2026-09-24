@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
 import Combobox from './Combobox';
+import Paginador from './Paginador';
 import { getPartidas,
   getPartidaPorId,
   getPartidasPorJugador,
@@ -10,17 +11,11 @@ import { getPartidas,
 } from '../services/partidasApi';
 import { getJuegos } from '../services/catalogoApi';
 import { getListaClientes } from '../services/perfilApi';
-
-function formatFecha(iso) {
-  try {
-    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
+import { formatFecha } from '../services/format';
 
 const FORM_VACIO = { mesa: '', juego_id: '', fecha: '', resultado: '', jugadores: ['', ''] };
 const MESAS = Array.from({ length: 20 }, (_, i) => String(i + 1));
+const TAMANO_PAGINA = 20;
 
 export default function PartidasView({ partidaInicial }) {
   const [partidas, setPartidas] = useState([]);
@@ -36,6 +31,7 @@ export default function PartidasView({ partidaInicial }) {
   const [jugadorFiltro, setJugadorFiltro] = useState('');
   const [partidasFiltradas, setPartidasFiltradas] = useState(null);
   const [filtroActivo, setFiltroActivo] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   const [formCrear, setFormCrear] = useState(FORM_VACIO);
   const [creando, setCreando] = useState(false);
@@ -71,6 +67,10 @@ export default function PartidasView({ partidaInicial }) {
         setError(err.message);
       });
   }, [partidaInicial]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [partidas, partidasFiltradas]);
 
   async function cargarPartidas() {
     setLoading(true);
@@ -276,7 +276,11 @@ export default function PartidasView({ partidaInicial }) {
     }
   }
 
-  const listaMostrada = partidasFiltradas ?? partidas.slice(0, 300);
+  const listaCompleta = partidasFiltradas ?? partidas;
+  const totalPaginas = Math.ceil(listaCompleta.length / TAMANO_PAGINA);
+  const paginaActual = Math.min(pagina, Math.max(1, totalPaginas));
+  const inicio = (paginaActual - 1) * TAMANO_PAGINA;
+  const listaMostrada = listaCompleta.slice(inicio, inicio + TAMANO_PAGINA);
 
   return (
     <Panel
@@ -397,7 +401,7 @@ export default function PartidasView({ partidaInicial }) {
 
       {loading ? (
         <p className="loading-note">Cargando partidas…</p>
-      ) : listaMostrada.length === 0 ? (
+      ) : listaCompleta.length === 0 ? (
         <p className="empty-note">
           {filtroActivo ? `${filtroActivo} no tiene partidas registradas.` : 'Todavía no se ha jugado ninguna partida.'}
         </p>
@@ -472,6 +476,12 @@ export default function PartidasView({ partidaInicial }) {
           </tbody>
         </table>
       )}
+      <Paginador
+        total={listaCompleta.length}
+        pagina={paginaActual}
+        tamano={TAMANO_PAGINA}
+        onCambioPagina={setPagina}
+      />
     </Panel>
   );
 }

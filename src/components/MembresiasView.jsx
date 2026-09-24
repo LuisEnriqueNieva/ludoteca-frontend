@@ -1,15 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Panel from './Panel';
+import Paginador from './Paginador';
 import { getClientes, getReservasDeCliente, crearReserva } from '../services/membresiasApi';
 import { SERVICE_URLS } from '../config';
+import { formatFecha } from '../services/format';
 
-function formatFecha(iso) {
-  try {
-    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
+const TAMANO_PAGINA = 20;
 
 export default function MembresiasView() {
   const [clientes, setClientes] = useState([]);
@@ -22,18 +18,23 @@ export default function MembresiasView() {
   const [mesa, setMesa] = useState('');
   const [horario, setHorario] = useState('');
   const [mensajeReserva, setMensajeReserva] = useState(null);
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     let vivo = true;
     setLoading(true);
     getClientes()
-            .then((data) => vivo && setClientes(data.slice(0, 300)))
+      .then((data) => vivo && setClientes(data))
       .catch((err) => vivo && setError(err.message))
       .finally(() => vivo && setLoading(false));
     return () => {
       vivo = false;
     };
   }, []);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [clientes, clienteQuery]);
 
   async function consultarReservas() {
     if (!clienteId) return;
@@ -55,6 +56,10 @@ export default function MembresiasView() {
           (c.plan || '').toLowerCase().includes(q)
       )
     : clientes;
+  const totalPaginas = Math.ceil(clientesFiltrados.length / TAMANO_PAGINA);
+  const paginaActual = Math.min(pagina, Math.max(1, totalPaginas));
+  const inicio = (paginaActual - 1) * TAMANO_PAGINA;
+  const clientesPagina = clientesFiltrados.slice(inicio, inicio + TAMANO_PAGINA);
 
   function elegirCliente(c) {
     setClienteId(c._id);
@@ -170,7 +175,7 @@ export default function MembresiasView() {
             </tr>
           </thead>
           <tbody>
-            {clientes.map((c) => (
+            {clientesPagina.map((c) => (
               <tr key={c._id}>
                 <td>{c.nombre}</td>
                 <td>{c.plan}</td>
@@ -180,6 +185,12 @@ export default function MembresiasView() {
           </tbody>
         </table>
       )}
+      <Paginador
+        total={clientesFiltrados.length}
+        pagina={paginaActual}
+        tamano={TAMANO_PAGINA}
+        onCambioPagina={setPagina}
+      />
     </Panel>
   );
 }

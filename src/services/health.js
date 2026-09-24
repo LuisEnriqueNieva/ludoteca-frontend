@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { SERVICE_URLS } from '../config';
 
 // Ping ligero por microservicio (endpoints pequeños) para reportar
@@ -12,15 +13,11 @@ const CHECKS = [
 ];
 
 async function ping(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetch(url, { method: 'GET', signal: controller.signal });
-    return res.status < 500;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
+    await axios.get(url, { timeout: 8000 });
+    return true;
+  } catch (error) {
+    return error.response == null || error.response.status < 500;
   }
 }
 

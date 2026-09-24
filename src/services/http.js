@@ -1,50 +1,39 @@
-export async function getJson(url, { signal } = {}) {
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`Error ${res.status} consultando ${url}`);
+import axios from 'axios';
+
+const VERBOS_ERROR = {
+  GET: 'consultando',
+  POST: 'enviando a',
+  PUT: 'actualizando',
+  DELETE: 'eliminando',
+};
+
+async function request(metodo, url, body, { signal } = {}) {
+  try {
+    const { data } = await axios({
+      method: metodo,
+      url,
+      data: body,
+      signal,
+    });
+    return data;
+  } catch (error) {
+    const status = error.response?.status ?? 'desconocido';
+    throw new Error(`Error ${status} ${VERBOS_ERROR[metodo]} ${url}`);
   }
-  return res.json();
 }
 
-export async function postJson(url, body, { signal } = {}) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`Error ${res.status} enviando a ${url}`);
-  }
-  return res.json();
+export function getJson(url, opts) {
+  return request('GET', url, undefined, opts);
 }
 
-export async function putJson(url, body, { signal } = {}) {
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`Error ${res.status} actualizando ${url}`);
-  }
-  return res.json();
+export function postJson(url, body, opts) {
+  return request('POST', url, body, opts);
 }
 
-export async function deleteJson(url, { signal } = {}) {
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`Error ${res.status} eliminando ${url}`);
-  }
-  return res.json();
+export function putJson(url, body, opts) {
+  return request('PUT', url, body, opts);
 }
 
+export function deleteJson(url, opts) {
+  return request('DELETE', url, undefined, opts);
+}

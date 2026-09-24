@@ -3,14 +3,7 @@ import { getJuegos, getEditoriales } from '../services/catalogoApi';
 import { getPartidas } from '../services/partidasApi';
 import { getClientes } from '../services/membresiasApi';
 import { getJuegoMasJugado, getHorarioPico } from '../services/analiticaApi';
-
-function formatFecha(iso) {
-  try {
-    return new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
+import { formatFecha } from '../services/format';
 
 function formatHora(iso) {
   try {
